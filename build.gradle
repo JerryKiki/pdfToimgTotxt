@@ -10,10 +10,12 @@ repositories {
 }
 
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    // Other dependencies
+    // PDFBox dependency
     implementation 'org.apache.pdfbox:pdfbox:2.0.29'
+
+    // JUnit 5 dependencies
+    testImplementation platform('org.junit:junit-bom:5.10.0') // JUnit BOM (Bill of Materials)
+    testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
 test {
