@@ -205,16 +205,16 @@ public class PdfToJpgConverter extends JFrame {
         Tesseract tesseract = new Tesseract();
         tesseract.setDatapath("C:\\Users\\admin\\IdeaProjects\\pdfToimgTotxt\\Tesseract-OCR\\tessdata");
 
-        // 언어 설정: 가로쓰기의 일본어(jpn)로 제한
-        tesseract.setLanguage("jpn");  // 가로 텍스트 처리에 집중
+        // 언어 설정
+        tesseract.setLanguage("jpn+jpn_vert");
 
         // Set OCR Engine Mode to LSTM only (if supported by your Tess4J version)
         try {
             // LSTM 엔진 사용 (1: OEM_LSTM_ONLY)
             tesseract.setOcrEngineMode(1);
 
-            // 가로로 읽기 위한 페이지 세그멘테이션 모드 설정
-            tesseract.setPageSegMode(3);  // 단락 단위로 처리 (가로 텍스트 인식 최적)
+            //페이지 세그멘테이션 모드 설정
+            tesseract.setPageSegMode(1);
 
             System.out.println("Performing OCR on the image...");
             String result = tesseract.doOCR(image);
