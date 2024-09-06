@@ -4,6 +4,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
+import org.apache.pdfbox.text.PDFTextStripper;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -23,7 +24,7 @@ import java.util.List;
 public class PdfToJpgConverter extends JFrame {
 
     private JPanel panel;
-    private JButton processButton, previewButton, saveTextButton, correctButton;
+    private JButton processImagesButton, processOcrButton, processVectorButton, previewButton, saveTextButton, correctButton;
     private JList<ImagePage> imageList;
     private DefaultListModel<ImagePage> listModel;
     private File pdfFile;
@@ -33,7 +34,7 @@ public class PdfToJpgConverter extends JFrame {
     private JLabel dropLabel;
 
     public PdfToJpgConverter() {
-        setTitle("PDF to JPEG Converter");
+        setTitle("PDF Converter");
         setSize(800, 600); // Increased size to accommodate all components
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -45,15 +46,29 @@ public class PdfToJpgConverter extends JFrame {
         dropLabel.setPreferredSize(new Dimension(400, 300)); // Set preferred size for initial label visibility
 
         // Buttons setup
-        processButton = new JButton("Process OCR");
-        processButton.setEnabled(false);
-        processButton.addActionListener(new ActionListener() {
+        processImagesButton = new JButton("PDF to Images");
+        processImagesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int selectedIndex = imageList.getSelectedIndex();
-                if (selectedIndex >= 0) {
-                    performOcrOnImage(imagePages.get(selectedIndex));
-                }
+                loadPdfImages();
+            }
+        });
+
+        processOcrButton = new JButton("PDF to Text (OCR)");
+        processOcrButton.setEnabled(false);
+        processOcrButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                performOcrOnSelectedPage();
+            }
+        });
+
+        processVectorButton = new JButton("PDF to Text (Vector)");
+        processVectorButton.setEnabled(false);
+        processVectorButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                performVectorTextExtractionOnSelectedPage();
             }
         });
 
@@ -97,7 +112,9 @@ public class PdfToJpgConverter extends JFrame {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER)); // Center align buttons
 
-        buttonPanel.add(processButton);
+        buttonPanel.add(processImagesButton);
+        buttonPanel.add(processOcrButton);
+        buttonPanel.add(processVectorButton);
         buttonPanel.add(previewButton);
         buttonPanel.add(saveTextButton);
         buttonPanel.add(correctButton);
@@ -138,26 +155,13 @@ public class PdfToJpgConverter extends JFrame {
                         List<File> files = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
                         if (!files.isEmpty()) {
                             pdfFile = files.get(0);
+                            processOcrButton.setEnabled(true);
+                            processVectorButton.setEnabled(true);
                             loadPdfImages();
-                            processButton.setEnabled(true);
-                            previewButton.setEnabled(true);
                         }
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                }
-            }
-        });
-
-        // Process selected image for OCR
-        processButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int selectedIndex = imageList.getSelectedIndex();
-                if (selectedIndex >= 0) {
-                    performOcrOnImage(imagePages.get(selectedIndex));
-                    scrollPane.setVisible(true);
-                    saveTextButton.setEnabled(true);
                 }
             }
         });
@@ -201,6 +205,43 @@ public class PdfToJpgConverter extends JFrame {
         }
     }
 
+    private void performOcrOnSelectedPage() {
+        int selectedIndex = imageList.getSelectedIndex();
+        if (selectedIndex >= 0 && selectedIndex < imagePages.size()) {
+            BufferedImage image = imagePages.get(selectedIndex);
+            performOcrOnImage(image);
+        } else {
+            JOptionPane.showMessageDialog(this, "No page selected for OCR.");
+        }
+    }
+
+    private void performVectorTextExtractionOnSelectedPage() {
+        int selectedIndex = imageList.getSelectedIndex();
+        if (selectedIndex >= 0) {
+            try (PDDocument document = PDDocument.load(pdfFile)) {
+                PDFTextStripper pdfStripper = new PDFTextStripper();
+                pdfStripper.setStartPage(selectedIndex + 1);
+                pdfStripper.setEndPage(selectedIndex + 1);
+                String pageText = pdfStripper.getText(document);
+
+                // JTextArea에 텍스트 설정
+                ocrResultArea.setText(pageText);
+                scrollPane.setVisible(true); // ScrollPane 표시
+                revalidate();
+                repaint();
+
+                // 교정 버튼과 텍스트 저장 버튼 활성화
+                correctButton.setEnabled(true);
+                saveTextButton.setEnabled(true);
+            } catch (IOException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error processing PDF file");
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "No page selected for vector text extraction.");
+        }
+    }
+
     private void performOcrOnImage(BufferedImage image) {
         Tesseract tesseract = new Tesseract();
         tesseract.setDatapath("C:\\Users\\admin\\IdeaProjects\\pdfToimgTotxt\\Tesseract-OCR\\tessdata");
@@ -213,75 +254,48 @@ public class PdfToJpgConverter extends JFrame {
             // LSTM 엔진 사용 (1: OEM_LSTM_ONLY)
             tesseract.setOcrEngineMode(1);
 
-            //페이지 세그멘테이션 모드 설정
+            // 페이지 세그멘테이션 모드 설정
             tesseract.setPageSegMode(1);
 
             System.out.println("Performing OCR on the image...");
             String result = tesseract.doOCR(image);
-            //System.out.println("OCR result: " + result);
+            // System.out.println("OCR result: " + result);
 
             // Update the JTextArea with OCR result
             ocrResultArea.setText(result);
             scrollPane.setVisible(true); // Show scroll pane with OCR result
             revalidate();
             repaint();
-
-            // Enable the correctButton after OCR processing
+            // Enable the correction and save buttons
             correctButton.setEnabled(true);
-
+            saveTextButton.setEnabled(true);
         } catch (TesseractException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "OCR Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "OCR error: " + e.getMessage());
         }
     }
 
-    // Show image preview in a new window
     private void showImagePreview(BufferedImage image) {
         JFrame previewFrame = new JFrame("Image Preview");
-        previewFrame.setSize(600, 600);
+        previewFrame.setSize(image.getWidth(), image.getHeight());
+        previewFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         JLabel imageLabel = new JLabel(new ImageIcon(image));
         previewFrame.add(new JScrollPane(imageLabel));
         previewFrame.setVisible(true);
     }
 
-    // Save OCR result to text file
     private void saveOcrResult() {
-        try {
-            String filePath = pdfFile.getParent() + "\\ocr_result.txt";
-            FileWriter writer = new FileWriter(filePath);
-            writer.write(ocrResultArea.getText());
-            writer.close();
-            JOptionPane.showMessageDialog(this, "Text saved as " + filePath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Custom class to hold image and its corresponding page number
-    private static class ImagePage {
-        BufferedImage image;
-        int pageNumber;
-
-        ImagePage(BufferedImage image, int pageNumber) {
-            this.image = image;
-            this.pageNumber = pageNumber;
-        }
-
-        @Override
-        public String toString() {
-            return "Page " + pageNumber;
-        }
-    }
-
-    // Custom renderer to display images in JList
-    private static class ImageCellRenderer extends JLabel implements ListCellRenderer<ImagePage> {
-        @Override
-        public Component getListCellRendererComponent(JList<? extends ImagePage> list, ImagePage value, int index, boolean isSelected, boolean cellHasFocus) {
-            setIcon(new ImageIcon(value.image.getScaledInstance(100, 100, Image.SCALE_SMOOTH))); // Thumbnail size
-            setText("Page " + value.pageNumber);
-            setOpaque(true);
-            setBackground(isSelected ? Color.LIGHT_GRAY : Color.WHITE);
-            return this;
+        JFileChooser fileChooser = new JFileChooser();
+        int option = fileChooser.showSaveDialog(this);
+        if (option == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            try (FileWriter writer = new FileWriter(file)) {
+                writer.write(ocrResultArea.getText());
+                JOptionPane.showMessageDialog(this, "Text saved successfully");
+            } catch (IOException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error saving text file");
+            }
         }
     }
 
@@ -362,7 +376,45 @@ public class PdfToJpgConverter extends JFrame {
         ocrResultArea.replaceRange(correctedText, start, end);
     }
 
+
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new PdfToJpgConverter().setVisible(true));
+        SwingUtilities.invokeLater(() -> {
+            PdfToJpgConverter frame = new PdfToJpgConverter();
+            frame.setVisible(true);
+        });
+    }
+
+    private class ImagePage {
+        private BufferedImage image;
+        private int pageNumber;
+
+        public ImagePage(BufferedImage image, int pageNumber) {
+            this.image = image;
+            this.pageNumber = pageNumber;
+        }
+
+        public BufferedImage getImage() {
+            return image;
+        }
+
+        public int getPageNumber() {
+            return pageNumber;
+        }
+    }
+
+    private class ImageCellRenderer extends JLabel implements ListCellRenderer<ImagePage> {
+        @Override
+        public Component getListCellRendererComponent(JList<? extends ImagePage> list, ImagePage value, int index, boolean isSelected, boolean cellHasFocus) {
+            setIcon(new ImageIcon(value.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH)));
+            setText("Page " + value.getPageNumber());
+            if (isSelected) {
+                setBackground(Color.LIGHT_GRAY);
+                setOpaque(true);
+            } else {
+                setBackground(Color.WHITE);
+                setOpaque(false);
+            }
+            return this;
+        }
     }
 }
