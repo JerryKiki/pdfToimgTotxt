@@ -15,7 +15,14 @@ dependencies {
 
     // JUnit 5 dependencies
     testImplementation platform('org.junit:junit-bom:5.10.0') // JUnit BOM (Bill of Materials)
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+    // Tesseract
+    implementation 'net.sourceforge.tess4j:tess4j:4.5.5'
+
+//    // LanguageTool
+//    implementation 'org.languagetool:languagetool-core:6.5.15'
 }
 
 test {
