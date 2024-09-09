@@ -376,6 +376,11 @@ public class PdfToJpgConverter extends JFrame {
         ocrResultArea.replaceRange(correctedText, start, end);
     }
 
+    private void onMakeQueryButtonClick() {
+        // 선택된 텍스트 가져오기
+        String selectedText = getSelectedText();
+
+    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
