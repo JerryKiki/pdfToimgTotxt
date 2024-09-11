@@ -11,7 +11,7 @@ CREATE TABLE `ParentQuestion`(
 );
 
 CREATE TABLE `ParentQuestion_metadata`(
-                                          parentQuestionId INT(10) UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
+                                          parentQuestionId INT(10) UNSIGNED PRIMARY KEY NOT NULL,
                                           examYear INT(10) NOT NULL,
                                           examMonth INT(10) NOT NULL,
                                           `level` INT(10) NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE `Question`(
 );
 
 CREATE TABLE `Question_metadata`(
-                                    questionId INT(10) UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
+                                    questionId INT(10) UNSIGNED PRIMARY KEY NOT NULL,
                                     examYear INT(10) NOT NULL,
                                     examMonth INT(10) NOT NULL,
                                     `level` INT(10) NOT NULL,
@@ -64,24 +64,24 @@ CREATE TABLE `Level`(
 );
 
 INSERT INTO `Level` SET
-    levelId = 1,
-`name` = 'N1';
+                        levelId = 1,
+                        `name` = 'N1';
 
 INSERT INTO `Level` SET
-    levelId = 2,
-`name` = 'N2';
+                        levelId = 2,
+                        `name` = 'N2';
 
 INSERT INTO `Level` SET
-    levelId = 3,
-`name` = 'N3';
+                        levelId = 3,
+                        `name` = 'N3';
 
 INSERT INTO `Level` SET
-    levelId = 4,
-`name` = 'N4';
+                        levelId = 4,
+                        `name` = 'N4';
 
 INSERT INTO `Level` SET
-    levelId = 5,
-`name` = 'N5';
+                        levelId = 5,
+                        `name` = 'N5';
 
 SELECT * FROM `Level`;
 
@@ -191,8 +191,8 @@ BEGIN
     IF (NEW.mockTestSessionId IS NOT NULL AND NEW.examSessionId IS NOT NULL) OR
        (NEW.mockTestSessionId IS NULL AND NEW.examSessionId IS NULL) THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'mockTestSessionId and examSessionId cannot both be NULL or both have values.';
-END IF;
+            SET MESSAGE_TEXT = 'mockTestSessionId and examSessionId cannot both be NULL or both have values.';
+    END IF;
 END;
 //
 
@@ -208,8 +208,8 @@ BEGIN
     IF (NEW.mockTestSessionId IS NOT NULL AND NEW.examSessionId IS NOT NULL) OR
        (NEW.mockTestSessionId IS NULL AND NEW.examSessionId IS NULL) THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'mockTestSessionId and examSessionId cannot both be NULL or both have values.';
-END IF;
+            SET MESSAGE_TEXT = 'mockTestSessionId and examSessionId cannot both be NULL or both have values.';
+    END IF;
 END;
 //
 
@@ -221,4 +221,4 @@ FROM Question Q
                     ON Q.questionId = QM.questionId
 WHERE QM.level = 2 && QM.category = 1
 ORDER BY RAND()
-    LIMIT 20;  -- 예시로 20개의 문제를 무작위로 선택
+LIMIT 20;  -- 예시로 20개의 문제를 무작위로 선택
