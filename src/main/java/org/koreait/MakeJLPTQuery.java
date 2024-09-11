@@ -63,7 +63,7 @@ public class MakeJLPTQuery {
         List<Map<String, String>> parentQuestionQueries = new ArrayList<>();
 
         //ParentQuestion + ParentQuestion_metadata를 저장할 Map
-        Map<String, String> parentQuestionQuery = new HashMap<>();
+        Map<String, String> parentQuestionQuerySet = new HashMap<>();
 
         String qNum = "";
         String qText = "";
