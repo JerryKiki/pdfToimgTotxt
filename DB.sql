@@ -25,8 +25,8 @@ CREATE TABLE `Question`(
                            updateDate DATETIME NOT NULL,
                            parentQuestionId INT(10) UNSIGNED,
                            qNum INT(10) NOT NULL,
-                           qText TEXT,
-                           `text` TEXT NOT NULL,
+                           qText TEXT NOT NULL,
+                           readingPassage TEXT,
                            option1 TEXT NOT NULL,
                            option2 TEXT NOT NULL,
                            option3 TEXT NOT NULL,
@@ -222,3 +222,5 @@ FROM Question Q
 WHERE QM.level = 2 && QM.category = 1
 ORDER BY RAND()
 LIMIT 20;  -- 예시로 20개의 문제를 무작위로 선택
+
+SELECT * FROM ParentQuestion;

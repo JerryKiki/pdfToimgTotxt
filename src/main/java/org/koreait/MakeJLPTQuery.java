@@ -7,6 +7,11 @@ public class MakeJLPTQuery {
 
     public static void main(String[] args) {
         doMakeJLPTQuery("""
+                    examYear = 2019,
+                    examMonth = 7,
+                    level = 1,
+                    category = 1
+                    
                     問題1 _ の言葉の読み方として最もよいものを、I 2 3 4から一つ選びなさい。(1*6)
                     1. あの態度には猛烈に腹が立った。
 
@@ -14,7 +19,14 @@ public class MakeJLPTQuery {
 
                     2.彼女は病を克服して、職場に戻ってきた。
                     | こうふく 2かくふく 3 かいふく 4 こくふく
+                    
+                    問題2 _ の言葉の読み方として最もよいものを、I 2 3 4から一つ選びなさい。(1*6)
+                    1. あの態度には猛烈に腹が立った。
 
+                    1 もれつ 2 きょうれつ 3 きょれつ 4 もうれつ
+
+                    2.彼女は病を克服して、職場に戻ってきた。
+                    | こうふく 2かくふく 3 かいふく 4 こくふく
                 """);
     }
 
@@ -23,26 +35,34 @@ public class MakeJLPTQuery {
 
         //대표적인 OCR 오탈자 수정
         selectedSentence = selectedSentence.replace("|", "1");
+        selectedSentence = selectedSentence.replace("I", "1");
 
         //questionBlock 나눔
-        List<String[]> questionBlocks = makeQuestionBlocks(selectedSentence);
+        List<String[]> parentQuestionBlocks = makeParentQuestionBlocks(selectedSentence);;
+        Map<String, Integer> metaDatas = getMetaDatas(selectedSentence);
 
-        //Block 별 문제 추출 및 분석
-        List<String> parentQuestion = makeQueryOfParentQuestions(selectedSentence);
-        List<String> questions = makeQueryOfQuestion(selectedSentence);
-        List<String> options = findOption(selectedSentence);
-        List<String> underlinedWords = findUnderlinedWord(selectedSentence);
+        //Update시 검수를 위한 count
+        int insertedParentQuestionCount = 0;
+        int insertedQuestionCount = 0;
+
+        //Block 별 문제 쿼리 삽입
+        for (String[] parentQuestionBlock : parentQuestionBlocks) {
+            //부모문제 삽입 후 Id 받아오기 (metaData는 여기서 함께 수행한다)
+            int parentQuestionId = insertParentQuestion(parentQuestionBlock[0], metaDatas);
+            int insertedQuestionCountPerBlock = insertQuestions(parentQuestionBlock[0], metaDatas, parentQuestionId);
+
+            insertedParentQuestionCount++;
+            insertedQuestionCount += insertedQuestionCountPerBlock;
+        }
 
         // 출력 확인
-        System.out.println("ParentQuestion: " + parentQuestion);
-        System.out.println("Questions: " + questions);
-        System.out.println("Options: " + options);
-        System.out.println("Underlined Words: " + underlinedWords);
+        System.out.println("Inserted ParentQuestions Count: " + insertedParentQuestionCount);
+        System.out.println("Inserted Questions Count: " + insertedQuestionCount);
     }
 
     //0. 감지된 텍스트를 가지고 상위문제를 기준으로 상위문제에 해당하는 하위문제끼리를 블록으로 만듦
-    public static List<String[]> makeQuestionBlocks(String selectedSentence) {
-        List<String[]> questionBlocks = new ArrayList<>();
+    public static List<String[]> makeParentQuestionBlocks(String selectedSentence) {
+        List<String[]> parentQuestionBlocks = new ArrayList<>();
 
         // "問題"로 시작하는 상위 문제와 그에 따른 하위 문제를 추출하는 정규 표현식
         Pattern pattern = Pattern.compile("(問題\\d+\\s.+?)(?=(問題\\d+|\\z))", Pattern.DOTALL);
@@ -50,20 +70,49 @@ public class MakeJLPTQuery {
 
         while (matcher.find()) {
             // 상위 문제와 그에 속한 하위 문제 묶음 (문제 텍스트를 블록 단위로 나눔)
-            questionBlocks.add(new String[]{matcher.group(1)});
+            parentQuestionBlocks.add(new String[]{matcher.group(1)});
         }
 
-        return questionBlocks;
+        return parentQuestionBlocks;
     }
 
-    // 1. 상위 문제(Parent Question) 추출해서 쿼리 작성
-    public static List<String> makeQueryOfParentQuestions(String text) {
+    //0. 감지된 텍스트에서 metadata를 추출하는 함수
+    public static Map<String, Integer> getMetaDatas(String selectedSentence) {
+        Map<String, Integer> metaDatas = new HashMap<>();
 
-        //상위 문제관련 쿼리들을 순차적으로 집어넣을 List
-        List<Map<String, String>> parentQuestionQueries = new ArrayList<>();
+        // 정규 표현식
+        String regex = "examYear\\s*=\\s*(\\d{4})\\s*,\\s*examMonth\\s*=\\s*(\\d{1,2})\\s*,\\s*level\\s*=\\s*([1-5])\\s*,\\s*category\\s*=\\s*([1-3])";
 
-        //ParentQuestion + ParentQuestion_metadata를 저장할 Map
-        Map<String, String> parentQuestionQuerySet = new HashMap<>();
+        // 패턴과 매처 생성
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(selectedSentence);
+
+        // 값 저장을 위한 변수들
+        int examYear = -1;
+        int examMonth = -1;
+        int level = -1;
+        int category = -1;
+
+        // 정규 표현식 매칭
+        if (matcher.find()) {
+            examYear = Integer.parseInt(matcher.group(1));  // 4자리 숫자
+            examMonth = Integer.parseInt(matcher.group(2)); // 1~2자리 숫자
+            level = Integer.parseInt(matcher.group(3));     // 1~5 사이의 정수
+            category = Integer.parseInt(matcher.group(4));  // 1~3 사이의 정수
+
+            metaDatas.put("examYear", examYear);
+            metaDatas.put("examMonth", examMonth);
+            metaDatas.put("level", level);
+            metaDatas.put("category", category);
+        }
+
+        return metaDatas;
+    }
+
+    // 1. 상위 문제(Parent Question) 추출해서 Insert
+    public static int insertParentQuestion(String text, Map<String, Integer> metaDatas) {
+
+        int lastInsertedParentQuestionId = 0;
 
         String qNum = "";
         String qText = "";
@@ -72,75 +121,83 @@ public class MakeJLPTQuery {
         Pattern pattern = Pattern.compile("問題(\\d+)\\s(.+)");
         Matcher matcher = pattern.matcher(text);
 
-        // 매칭되는 모든 상위 문제를 처리
+        // 매칭되는 상위 문제를 처리
         while (matcher.find()) {
             qNum = matcher.group(1);   // 문제 번호
             qText = matcher.group(2);  // 문제 텍스트
 
-            // 쿼리 생성
-            String parentQuestionQuery = "INSERT INTO parentQuestions SET regDate = NOW(), updateDate = NOW(),";
-            parentQuestionQuery += " qNum = " + qNum + ",";
-            parentQuestionQuery += " qText = '" + qText + "';";
-
-            // 생성된 쿼리를 리스트에 추가
-            parentQuestionQueries.add(parentQuestionQuery);
+            // 인서트
+            MyBatisApp myBatisApp = new MyBatisApp();
+            lastInsertedParentQuestionId = myBatisApp.insertParentQuestion(qNum, qText, metaDatas);
         }
 
-        // 모든 쿼리 반환
-        return parentQuestionQueries;
+        //부모 질문 id 반환
+        return lastInsertedParentQuestionId;
     }
 
-    //상위문제의 메타데이터 쿼리 작성 - 상위문제 insert할때 추가된 ID 받아와서 generate하는 방식이 낫겠음
-//    public static String makeQueryOfParentQuestion_metadata(String text) {
-//        String parentQuestion_metadataQuery = "";
-//
-//        parentQuestion_metadataQuery = "INSERT INTO parentQuestion_metadata SET examYear = ?, examMonth = ?,";
-//        parentQuestion_metadataQuery += "`level` = ?, category = ?";
-//
-//        return parentQuestion_metadataQuery;
-//    }
+    //2-1. 하위 문제들을 블럭화 (인자로 이미 블럭화된 묶음을 받음)
+    public static List<String[]> makeQuestionBlocks(String blockedQuestions) {
+        List<String[]> QuestionBlocks = new ArrayList<>();
 
-    // 2. 하위 문제 추출
-    public static List<String> makeQueryOfQuestion(String text) {
-        List<String> questions = new ArrayList<>();
+        // 하위 문제와 선택지를 블럭 단위로 추출하는 정규 표현식
+        Pattern pattern = Pattern.compile("(\\d+\\.\\s.+?\\n(?:\\d\\s.+?\\n)+)", Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(blockedQuestions);
 
-        //부모문제 번호
-        String parentQNum = "";
-
-        Pattern parentQNumPattern = Pattern.compile("問題(\\d+)");
-        Matcher parentQNumMatcher = parentQNumPattern.matcher(text);
-        while (parentQNumMatcher.find()) {
-            parentQNum = parentQNumMatcher.group(1);
-        }
-
-        Pattern pattern = Pattern.compile("\\d+\\.");
-        Matcher matcher = pattern.matcher(text);
         while (matcher.find()) {
-            questions.add(matcher.group());
+            // 하위 문제와 선택지를 블록 단위로 나눔
+            QuestionBlocks.add(new String[]{matcher.group(1)});
         }
-        return questions;
+
+        return QuestionBlocks;
     }
 
-    // 3. 선택지 추출
-    public static List<String> findOption(String text) {
-        List<String> options = new ArrayList<>();
-        Pattern pattern = Pattern.compile("\\d\\s[^\n]+");
-        Matcher matcher = pattern.matcher(text);
-        while (matcher.find()) {
-            options.add(matcher.group().trim());
-        }
-        return options;
-    }
+    // 2-2. 각각의 하위 문제를 Insert
+    public static int insertQuestions(String text, Map<String, Integer> metaDatas, int parentQuestionId) {
 
-    // 4. 밑줄 단어 추출
-    public static List<String> findUnderlinedWord(String text) {
-        List<String> underlinedWords = new ArrayList<>();
-        Pattern pattern = Pattern.compile("_ (\\S+)");
-        Matcher matcher = pattern.matcher(text);
-        while (matcher.find()) {
-            underlinedWords.add(matcher.group(1));
+        int insertedQuestionCount = 0;
+        List<String[]> QuestionBlocks = makeQuestionBlocks(text);
+
+        for (String[] questionBlock : QuestionBlocks) {
+
+            //필요한 변수 선언
+            String qNum = "";
+            String qText = "";
+            String readingPassage = "";
+            String option1 = "";
+            String option2 = "";
+            String option3 = "";
+            String option4 = "";
+
+            //패턴&매쳐
+            Pattern pattern = Pattern.compile(
+                    "(\\d+)\\.\\s+(.+?)\\n" +                // 문제번호와 문제 텍스트 캡처
+                            "(?:(.+?)\\n)?" +                        // 선택적 읽기 단락 캡처 (없을 수도 있음)
+                            "1\\s+(.+?)\\n" +                        // 선택지 1 캡처
+                            "2\\s+(.+?)\\n" +                        // 선택지 2 캡처
+                            "3\\s+(.+?)\\n" +                        // 선택지 3 캡처
+                            "4\\s+(.+?)(?:\\n|\\z)",                 // 선택지 4 캡처 (마지막 줄이므로 끝 표시 \\z를 추가)
+                    Pattern.DOTALL
+            );
+            Matcher matcher = pattern.matcher(questionBlock[0]);
+            while (matcher.find()) {
+
+                qNum = matcher.group(1);             // 문제 번호
+                qText = matcher.group(2);            // 문제 텍스트
+                readingPassage = matcher.group(3);   // 읽기 단락 (있으면 캡처, 없으면 null)
+                option1 = matcher.group(4);          // 선택지 1
+                option2 = matcher.group(5);          // 선택지 2
+                option3 = matcher.group(6);          // 선택지 3
+                option4 = matcher.group(7);          // 선택지 4
+
+                //인서트
+                MyBatisApp myBatisApp = new MyBatisApp();
+                myBatisApp.insertQuestion(parentQuestionId, metaDatas, qNum, qText, readingPassage, option1, option2, option3, option4);
+
+                insertedQuestionCount++;
+            }
         }
-        return underlinedWords;
+
+        return insertedQuestionCount;
     }
 }
 
