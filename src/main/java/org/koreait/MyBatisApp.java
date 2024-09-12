@@ -89,7 +89,7 @@ public class MyBatisApp {
                 category = metaDatas.get("category");
             }
 
-            if(readingPassage != null) {
+            if(readingPassage != null && (!readingPassage.isEmpty())) {
                 mapper.insertQuestionWithReadingPassage(parentQuestionId, qNum, qText, readingPassage, option1, option2, option3, option4);
             } else {
                 mapper.insertQuestionWithoutReadingPassage(parentQuestionId, qNum, qText, option1, option2, option3, option4);
@@ -99,6 +99,10 @@ public class MyBatisApp {
             lastInsertedQuestionId = mapper.getLastInsertId();
             //활용하여 메타데이터도 업데이트
             mapper.insertQuestion_metadata(lastInsertedQuestionId, examYear, examMonth, level, category);
+
+            session.commit();  // 트랜잭션 커밋
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

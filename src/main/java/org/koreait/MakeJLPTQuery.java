@@ -11,34 +11,62 @@ public class MakeJLPTQuery {
                     examMonth = 7,
                     level = 1,
                     category = 1
-                    
-                    問題1 _ の言葉の読み方として最もよいものを、I 2 3 4から一つ選びなさい。(1*6)
-                    1. あの態度には猛烈に腹が立った。
 
+                    問題1 _ の言葉の読み方として最もよいものを、I 2 3 4から一つ選びなさい。(|*6)
+                    1. あの態度には和猛烈に腹が立った。
+                    本文がある状況のテストのためのダミーデータです。本文がある状況のテストのためのダミーデータです。
+                    本文がある状況のテストのためのダミーデータです。本文がある状況のテストのためのダミーデータです。本文がある状況のテストのためのダミーデータです。
                     1 もれつ 2 きょうれつ 3 きょれつ 4 もうれつ
-
+                    
                     2.彼女は病を克服して、職場に戻ってきた。
                     | こうふく 2かくふく 3 かいふく 4 こくふく
                     
-                    問題2 _ の言葉の読み方として最もよいものを、I 2 3 4から一つ選びなさい。(1*6)
-                    1. あの態度には猛烈に腹が立った。
-
-                    1 もれつ 2 きょうれつ 3 きょれつ 4 もうれつ
-
-                    2.彼女は病を克服して、職場に戻ってきた。
-                    | こうふく 2かくふく 3 かいふく 4 こくふく
+                    3.前れやすいので、運ぶときは気をつけてください。
+                    1 つぶれやすい 2 くずれやすい
+                    3 はがれやすい 4 こぼれやすい
+                    
+                    4.この薬にはウイルスの繁殖を折える効果がある。
+                    | はんしょく 2 はんちょく 3 ばんしょく 4。ばんあまく
+                    
+                    5.サイトの履歴は残っていなかった。
+                    1 ふくれき 2 られき 3 りれき 。刈ふ信き
+                    
+                    6.夕日に赤く映える山を写真に収めた。
+                    1 そびえる 2 はえる 3 もをる*、4 さえる
+                    
+                    問題2 (    ) に入れるのに最もよいものを、| 2 3 4から一つ選びなさい。(1*7)
+                    7.がガスが漏れると、(   )が感知して乏報が鳴る。
+                    1 レーダー 2 モーター 3 センサー 4 レバー
+                    
+                    8.彼はロケットを作って宇宙へ飛ばしたいという(    )夢を実現した。
+                    1 絶大な 2盛大な 3 雑大な 4壮大な
+                    
+                    9.その優しいメロディーは私の耳に(   )敗き、眠りに謗ってくれた。
+                    1 ここちよく 2 いさぎよく 3 喜ばしく 4 輝かしく
+                    
+                    10.兄は科学者として遺伝子の研究に(    )している。
+                    1 従事 2勤務 3在籍 4就労
+                    
+                    11. 葉書が届いたが、雨でインクが少し(     )、読みにくかった。
+                    | 暴れて 2 にじんで 3 震えて 4 ゆがんで
                 """);
     }
 
-    //JLPT Query를 제작...
+    //분석해서 쿼리 삽입(이 클래스의 main같은 함수)
     public static void doMakeJLPTQuery(String selectedSentence) {
 
         //대표적인 OCR 오탈자 수정
         selectedSentence = selectedSentence.replace("|", "1");
         selectedSentence = selectedSentence.replace("I", "1");
 
+        //텍스트 정리
+        selectedSentence = selectedSentence.replaceAll("\\t", "")        // 탭 제거
+                                            .replaceAll(" +", " ")        // 여러 개의 공백을 하나의 공백으로
+                                            .replaceAll("[\\n\\r]+", "\n"); // 여러 개의 줄바꿈을 하나의 줄바꿈으로
+
         //questionBlock 나눔
-        List<String[]> parentQuestionBlocks = makeParentQuestionBlocks(selectedSentence);;
+        List<String[]> parentQuestionBlocks = makeParentQuestionBlocks(selectedSentence);
+        ;
         Map<String, Integer> metaDatas = getMetaDatas(selectedSentence);
 
         //Update시 검수를 위한 count
@@ -140,7 +168,7 @@ public class MakeJLPTQuery {
         List<String[]> QuestionBlocks = new ArrayList<>();
 
         // 하위 문제와 선택지를 블럭 단위로 추출하는 정규 표현식
-        Pattern pattern = Pattern.compile("(\\d+\\.\\s.+?\\n(?:\\d\\s.+?\\n)+)", Pattern.DOTALL);
+        Pattern pattern = Pattern.compile("(\\d+\\..+?)(?=\\d+\\.|\\z)", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(blockedQuestions);
 
         while (matcher.find()) {
@@ -168,33 +196,52 @@ public class MakeJLPTQuery {
             String option3 = "";
             String option4 = "";
 
-            //패턴&매쳐
-            Pattern pattern = Pattern.compile(
-                    "(\\d+)\\.\\s+(.+?)\\n" +                // 문제번호와 문제 텍스트 캡처
-                            "(?:(.+?)\\n)?" +                        // 선택적 읽기 단락 캡처 (없을 수도 있음)
-                            "1\\s+(.+?)\\n" +                        // 선택지 1 캡처
-                            "2\\s+(.+?)\\n" +                        // 선택지 2 캡처
-                            "3\\s+(.+?)\\n" +                        // 선택지 3 캡처
-                            "4\\s+(.+?)(?:\\n|\\z)",                 // 선택지 4 캡처 (마지막 줄이므로 끝 표시 \\z를 추가)
-                    Pattern.DOTALL
-            );
-            Matcher matcher = pattern.matcher(questionBlock[0]);
-            while (matcher.find()) {
-
-                qNum = matcher.group(1);             // 문제 번호
-                qText = matcher.group(2);            // 문제 텍스트
-                readingPassage = matcher.group(3);   // 읽기 단락 (있으면 캡처, 없으면 null)
-                option1 = matcher.group(4);          // 선택지 1
-                option2 = matcher.group(5);          // 선택지 2
-                option3 = matcher.group(6);          // 선택지 3
-                option4 = matcher.group(7);          // 선택지 4
-
-                //인서트
-                MyBatisApp myBatisApp = new MyBatisApp();
-                myBatisApp.insertQuestion(parentQuestionId, metaDatas, qNum, qText, readingPassage, option1, option2, option3, option4);
-
-                insertedQuestionCount++;
+            //qNum + qText 패턴&매쳐
+            Pattern qNumAndqTextPattern = Pattern.compile("(\\d+)\\.\\s*(.+)\\n");
+            Matcher qNumAndqTextMatcher = qNumAndqTextPattern.matcher(questionBlock[0]);
+            if (qNumAndqTextMatcher.find()) {
+                qNum = qNumAndqTextMatcher.group(1);
+                qText = qNumAndqTextMatcher.group(2);
             }
+
+            //readingPassage 패턴&매쳐
+            Pattern readingPassagePattern = Pattern.compile("\\n(.*?)\\n1\\s", Pattern.DOTALL);
+            Matcher readingPassageMatcher = readingPassagePattern.matcher(questionBlock[0]);
+            if (readingPassageMatcher.find()) {
+                readingPassage = readingPassageMatcher.group(1);
+            }
+
+            //option1~4 패턴&매쳐
+            Pattern option1Pattern = Pattern.compile("1\\s(.+?)(?=\\s2\\s)");
+            Matcher option1Matcher = option1Pattern.matcher(questionBlock[0]);
+            if (option1Matcher.find()) {
+                option1 = option1Matcher.group(1);
+            }
+
+            Pattern option2Pattern = Pattern.compile("2\\s(.+?)(?=\\s3\\s)");
+            Matcher option2Matcher = option2Pattern.matcher(questionBlock[0]);
+            if (option2Matcher.find()) {
+                option2 = option2Matcher.group(1);
+            }
+
+            Pattern option3Pattern = Pattern.compile("3\\s(.+?)(?=\\s4\\s)");
+            Matcher option3Matcher = option3Pattern.matcher(questionBlock[0]);
+            if (option3Matcher.find()) {
+                option3 = option3Matcher.group(1);
+            }
+
+            Pattern option4Pattern = Pattern.compile("4\\s(.+)");
+            Matcher option4Matcher = option4Pattern.matcher(questionBlock[0]);
+            if (option4Matcher.find()) {
+                option4 = option4Matcher.group(1);
+            }
+
+            //인서트
+            MyBatisApp myBatisApp = new MyBatisApp();
+            myBatisApp.insertQuestion(parentQuestionId, metaDatas, qNum, qText, readingPassage, option1, option2, option3, option4);
+
+            insertedQuestionCount++;
+
         }
 
         return insertedQuestionCount;

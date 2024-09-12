@@ -41,7 +41,7 @@ public interface MyBatisMapper {
     option1 = #{option1},
     option2 = #{option2},
     option3 = #{option3},
-    option4 = #{option4},
+    option4 = #{option4}
     """)
     void insertQuestionWithReadingPassage(@Param("parentQuestionId")int parentQuestionId, @Param("qNum")String qNum, @Param("qText")String qText, @Param("readingPassage")String readingPassage, @Param("option1")String option1, @Param("option2")String option2, @Param("option3")String option3, @Param("option4")String option4);
 
@@ -55,7 +55,7 @@ public interface MyBatisMapper {
     option1 = #{option1},
     option2 = #{option2},
     option3 = #{option3},
-    option4 = #{option4},
+    option4 = #{option4}
     """)
     void insertQuestionWithoutReadingPassage(@Param("parentQuestionId")int parentQuestionId, @Param("qNum")String qNum, @Param("qText")String qText, @Param("option1")String option1, @Param("option2")String option2, @Param("option3")String option3, @Param("option4")String option4);
 
