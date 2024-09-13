@@ -24,7 +24,7 @@ import java.util.List;
 public class PdfToJpgConverter extends JFrame {
 
     private JPanel panel;
-    private JButton processImagesButton, processOcrButton, processVectorButton, previewButton, saveTextButton, correctButton;
+    private JButton processImagesButton, processOcrButton, processVectorButton, previewButton, saveTextButton, correctButton, insertToDBButton;
     private JList<ImagePage> imageList;
     private DefaultListModel<ImagePage> listModel;
     private File pdfFile;
@@ -104,6 +104,16 @@ public class PdfToJpgConverter extends JFrame {
             }
         });
 
+        // Initialize InsertToDBButton
+        insertToDBButton = new JButton("Insert To DB");
+        insertToDBButton.setEnabled(false);
+        insertToDBButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onInsertToDBButtonClick();
+            }
+        });
+
         // Adding components
         panel.add(dropLabel, BorderLayout.CENTER); // Initially display the drag-and-drop label
         panel.add(new JScrollPane(imageList), BorderLayout.WEST);
@@ -118,6 +128,7 @@ public class PdfToJpgConverter extends JFrame {
         buttonPanel.add(previewButton);
         buttonPanel.add(saveTextButton);
         buttonPanel.add(correctButton);
+        buttonPanel.add(insertToDBButton);
 
         panel.add(buttonPanel, BorderLayout.SOUTH); // Add the button panel to the bottom
 
@@ -230,9 +241,10 @@ public class PdfToJpgConverter extends JFrame {
                 revalidate();
                 repaint();
 
-                // 교정 버튼과 텍스트 저장 버튼 활성화
+                // 교정 버튼과 텍스트 저장 버튼, DB에 보내기 버튼 활성화
                 correctButton.setEnabled(true);
                 saveTextButton.setEnabled(true);
+                insertToDBButton.setEnabled(true);
             } catch (IOException e) {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Error processing PDF file");
@@ -269,6 +281,7 @@ public class PdfToJpgConverter extends JFrame {
             // Enable the correction and save buttons
             correctButton.setEnabled(true);
             saveTextButton.setEnabled(true);
+            insertToDBButton.setEnabled(true);
         } catch (TesseractException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "OCR error: " + e.getMessage());
@@ -376,10 +389,14 @@ public class PdfToJpgConverter extends JFrame {
         ocrResultArea.replaceRange(correctedText, start, end);
     }
 
-    private void onMakeQueryButtonClick() {
+    private void onInsertToDBButtonClick() {
         // 선택된 텍스트 가져오기
         String selectedText = getSelectedText();
-
+        if (selectedText != null && !selectedText.isEmpty()) {
+            MakeJLPTQuery.doMakeJLPTQuery(selectedText);
+        } else {
+            JOptionPane.showMessageDialog(this, "No text selected for insertion.");
+        }
     }
 
     public static void main(String[] args) {
