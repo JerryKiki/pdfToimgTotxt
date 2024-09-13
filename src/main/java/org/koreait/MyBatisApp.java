@@ -24,9 +24,10 @@ public class MyBatisApp {
         }
     }
 
-
+    //Mapper에 ParentQuestion insert에 대한 정보를 최종적으로 전달
     public int insertParentQuestion(String qNum, String qText, Map<String, Integer> metaDatas) {
 
+        //마지막으로 insert된 parentQuestion row의 id값을 받아올 변수
         int lastInsertedParentQuestionId = -1;
 
         try (SqlSession session = sqlSessionFactory.openSession()) {
@@ -53,18 +54,24 @@ public class MyBatisApp {
 
             // 상위 문제 삽입
             mapper.insertParentQuestion(qNum, qText);
+            // 삽입된 row의 id값 반환
             lastInsertedParentQuestionId = mapper.getLastInsertId();
+            // id값을 가지고 metadata도 삽입
             mapper.insertParentQuestion_metadata(lastInsertedParentQuestionId, examYear, examMonth, level, category);
 
-            session.commit();  // 트랜잭션 커밋
+            session.commit();  // 트랜잭션 커밋 ==> 중요! 이거 안하면 쿼리 성공했어도 결과 반영 안됨.
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+        // 삽입된 id값 반환
         return lastInsertedParentQuestionId;
     }
 
+    //Mapper에 Question insert에 대한 정보를 최종적으로 전달
+    //이건 id값을 딱히 이 함수를 실행한 메서드에서까지 반환받을 필요는 없어서 void로 작성함
     public void insertQuestion(int parentQuestionId, Map<String, Integer> metaDatas, String qNum, String qText, String readingPassage, String option1, String option2, String option3, String option4) {
+        //마지막으로 insert된 parentQuestion row의 id값을 받아올 변수
         int lastInsertedQuestionId = -1;
 
         try (SqlSession session = sqlSessionFactory.openSession()) {
