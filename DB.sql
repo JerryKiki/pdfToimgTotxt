@@ -31,7 +31,7 @@ CREATE TABLE `Question`(
                            option2 TEXT NOT NULL,
                            option3 TEXT NOT NULL,
                            option4 TEXT NOT NULL,
-                           corAnswer INT(10) NOT NULL,
+                           corAnswer INT(10) NOT NULL DEFAULT 0,
                            FOREIGN KEY (parentQuestionId) REFERENCES ParentQuestion(parentQuestionId) ON DELETE SET NULL
 );
 
@@ -83,16 +83,16 @@ INSERT INTO `Level` SET
                         levelId = 5,
                         `name` = 'N5';
 
-SELECT * FROM `Level`;
+select * from `Level`;
 
 #####################
 
-CREATE TABLE `Category`(
-                           categoryId INT(10) UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                           `name` CHAR(20) NOT NULL
+create table `Category`(
+                           categoryId INT(10) UNSIGNED PRIMARY KEY auto_increment NOT NULL,
+                           `name` Char(20) not null
 );
 
-INSERT INTO `Category` SET
+insert into `Category` SET
     `name` = 'linguistic knowledge';
 
 INSERT INTO `Category` SET
@@ -121,32 +121,32 @@ CREATE TABLE `User`(
                        delDate DATETIME COMMENT '탈퇴 날짜'
 );
 
-CREATE TABLE `ExamSession`(
+create table `ExamSession`(
                               examSessionId INT(10) UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                              userId INT(10) UNSIGNED NOT NULL,
-                              `level` INT(10) UNSIGNED NOT NULL,
-                              startTime DATETIME NOT NULL,
-                              endTime DATETIME,
-                              score INT(10) NOT NULL DEFAULT 0,
-                              solvedQuestions INT(10) NOT NULL DEFAULT 0,
+                              userId INT(10) unsigned not null,
+                              `level` int(10) unsigned not null,
+                              startTime datetime not null,
+                              endTime datetime,
+                              score int(10) not null default 0,
+                              solvedQuestions INT(10) not null default 0,
                               FOREIGN KEY (userId) REFERENCES `User`(userId) ON DELETE RESTRICT,
-                              FOREIGN KEY (`level`) REFERENCES `Level`(levelId) ON DELETE RESTRICT
+                              foreign key (`level`) references `Level`(levelId) ON DELETE RESTRICT
 );
 
-CREATE TABLE `ExamQuestionsPerSession`(
-                                          examSessionQuestionId INT(10) UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                                          examSessionId INT(10) UNSIGNED NOT NULL,
-                                          questionId INT(10) UNSIGNED NOT NULL,
-                                          FOREIGN KEY (examSessionId) REFERENCES `ExamSession`(examSessionId) ON DELETE CASCADE,
-                                          FOREIGN KEY (questionId) REFERENCES `Question`(questionId) ON DELETE RESTRICT
+create table `ExamQuestionsPerSession`(
+                                          examSessionQuestionId INT(10) unsigned primary key auto_increment not null,
+                                          examSessionId int(10) unsigned not null,
+                                          questionId int(10) unsigned not null,
+                                          foreign key (examSessionId) references `ExamSession`(examSessionId) on delete CASCADE,
+                                          foreign key (questionId) references `Question`(questionId) On delete RESTRICT
 );
 
 CREATE TABLE `MockTestSession` (
-                                   mockTestSessionId INT(10) UNSIGNED PRIMARY KEY AUTO_INCREMENT NOT NULL,
+                                   mockTestSessionId INT(10) unsigned PRIMARY KEY AUTO_INCREMENT not null,
                                    userId INT(10) UNSIGNED NOT NULL,
                                    examYear INT(10) NOT NULL,
                                    examMonth INT(10) NOT NULL,
-                                   `level` INT(10) UNSIGNED NOT NULL,
+                                   `level` INT(10) unsigned NOT NULL,
                                    startTime DATETIME NOT NULL,
                                    endTime DATETIME,
                                    score INT(10) NOT NULL DEFAULT 0,
@@ -172,8 +172,8 @@ CREATE TABLE `UserExamRecord`(
                                  questionId INT(10) UNSIGNED NOT NULL,
                                  selectedAnswer INT(10),
                                  isCorrect BOOL NOT NULL,
-                                 mockTestSessionId INT(10) UNSIGNED NULL,
-                                 examSessionId INT(10) UNSIGNED NULL,
+                                 mockTestSessionId int(10) unsigned NULL,
+                                 examSessionId int(10) unsigned NULL,
                                  FOREIGN KEY (userId) REFERENCES `User`(userId) ON DELETE RESTRICT,
                                  FOREIGN KEY (questionId) REFERENCES `Question`(questionId) ON DELETE RESTRICT,
                                  FOREIGN KEY (mockTestSessionId) REFERENCES `MockTestSession`(mockTestSessionId) ON DELETE CASCADE,
@@ -224,3 +224,8 @@ ORDER BY RAND()
 LIMIT 20;  -- 예시로 20개의 문제를 무작위로 선택
 
 SELECT * FROM ParentQuestion;
+SELECT * FROM ParentQuestion_metadata;
+
+SELECT * FROM Question ORDER BY regDate DESC;
+DESC Question;
+SELECT * FROM Question_metadata;
